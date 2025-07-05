@@ -1,0 +1,149 @@
+#!/bin/bash
+
+WINE_BOXES_DIR="$HOME/.wine_boxes"
+mkdir -p "$WINE_BOXES_DIR"
+
+function create_box() {
+    local box_name="$1"
+    local box_path="$WINE_BOXES_DIR/$box_name"
+
+    if [ -d "$box_path" ]; then
+        echo "A caixa '$box_name' já existe. Escolha outro nome."
+        return 1
+    fi
+
+    echo "Criando a caixa '$box_name' em '$box_path'..."
+    mkdir -p "$box_path"
+    WINEPREFIX="$box_path" wineboot -u
+
+    echo "Qual o tipo de caixa que você deseja criar?"
+    echo "1) Jogos (configurações otimizadas para jogos)"
+    echo "2) Aplicativos (configurações para aplicativos gerais)"
+    echo "3) Personalizado (sem configurações adicionais)"
+    read -p "Escolha uma opção (1-3): " box_type
+
+    case "$box_type" in
+        1)
+            echo "Configurando a caixa para jogos..."
+            WINEPREFIX="$box_path" winetricks --unattended corefonts vcrun2005 vcrun2008 vcrun2010 vcrun2012 vcrun2013 vcrun2015 vcrun2017 vcrun2019 vcrun2022 d3dcompiler_43 d3dcompiler_47 d3dx9 dotnet40 dotnet452 dotnet462 dotnet472 dotnet48 physx xact xinput_43 quartz
+            ;;
+        2)
+            echo "Configurando a caixa para aplicativos..."
+            WINEPREFIX="$box_path" winetricks --unattended corefonts vcrun2005 vcrun2008 vcrun2010 vcrun2012 vcrun2013 vcrun2015 vcrun2017 vcrun2019 vcrun2022
+            ;;
+        3)
+            echo "Criando caixa personalizada (sem configurações adicionais)."
+            ;;
+        *)
+            echo "Opção inválida. Criando caixa personalizada por padrão."
+            ;;
+    esac
+    echo "Caixa '$box_name' criada com sucesso!"
+}
+
+function remove_box() {
+    local box_name="$1"
+    local box_path="$WINE_BOXES_DIR/$box_name"
+
+    if [ ! -d "$box_path" ]; then
+        echo "A caixa '$box_name' não existe."
+        return 1
+    fi
+
+    read -p "Tem certeza que deseja remover a caixa '$box_name'? (s/N): " confirm
+    if [[ "$confirm" =~ ^[Ss]$ ]]; then
+        echo "Removendo a caixa '$box_name'..."
+        rm -rf "$box_path"
+        echo "Caixa '$box_name' removida com sucesso!"
+    else
+        echo "Remoção cancelada."
+    fi
+}
+
+function list_boxes() {
+    echo "Caixas Wine existentes:"
+    if [ -z "$(ls -A "$WINE_BOXES_DIR")" ]; then
+        echo "Nenhuma caixa Wine encontrada."
+    else
+        for box in "$WINE_BOXES_DIR"/*; do
+            if [ -d "$box" ]; then
+                echo "- $(basename "$box")"
+            fi
+        done
+    fi
+}
+
+function run_exe_in_box() {
+    local box_name="$1"
+    local exe_path="$2"
+    local box_path="$WINE_BOXES_DIR/$box_name"
+
+    if [ ! -d "$box_path" ]; then
+        echo "Erro: A caixa '$box_name' não existe."
+        list_boxes
+        return 1
+    fi
+
+    if [ -z "$exe_path" ]; then
+        echo "Erro: Você precisa especificar o caminho para o executável (.exe)."
+        return 1
+    fi
+
+    if [ ! -f "$exe_path" ]; then
+        echo "Erro: O arquivo '$exe_path' não foi encontrado."
+        return 1
+    fi
+
+    echo "Executando '$exe_path' na caixa '$box_name'..."
+    WINEPREFIX="$box_path" wine "$exe_path"
+}
+
+function show_help() {
+    echo "Uso: $0 [comando]"
+    echo ""
+    echo "Comandos disponíveis:"
+    echo "  create <nome_da_caixa>   Cria uma nova caixa Wine."
+    echo "  remove <nome_da_caixa>   Remove uma caixa Wine existente."
+    echo "  list                     Lista todas as caixas Wine existentes."
+    echo "  run <nome_da_caixa> <caminho_do_exe> Executa um .exe usando uma caixa específica."
+    echo "  help                     Mostra esta mensagem de ajuda."
+    echo ""
+    echo "Exemplos:"
+    echo "  $0 create meu_jogo"
+    echo "  $0 remove meu_app"
+    echo "  $0 list"
+    echo "  $0 run meu_jogo ~/Downloads/SetupGame.exe"
+}
+
+case "$1" in
+    create)
+        if [ -z "$2" ]; then
+            echo "Erro: Você precisa fornecer um nome para a caixa."
+            show_help
+        else
+            create_box "$2"
+        fi
+        ;;
+    remove)
+        if [ -z "$2" ]; then
+            echo "Erro: Você precisa fornecer o nome da caixa a ser removida."
+            show_help
+        else
+            remove_box "$2"
+        fi
+        ;;
+    list)
+        list_boxes
+        ;;
+    run)
+        if [ -z "$2" ] || [ -z "$3" ]; then
+            echo "Erro: Você precisa fornecer o nome da caixa e o caminho para o executável."
+            show_help
+        else
+            run_exe_in_box "$2" "$3"
+        fi
+        ;;
+    help|*)
+        show_help
+        ;;
+esac
