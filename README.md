@@ -82,7 +82,7 @@ Para outras distribuições Linux, você pode baixar o script diretamente e colo
 
     ```bash
     # Baixe o script
-    sudo wget -O /usr/local/bin/wine-manager "URL_DO_SCRIPT_RAW"
+    sudo wget -O /usr/local/bin/wine-manager https://raw.githubusercontent.com/pedrodev2025/wine-manager/refs/heads/main/wine-manager
 
     # Dê permissão de execução
     sudo chmod +x /usr/local/bin/wine-manager
