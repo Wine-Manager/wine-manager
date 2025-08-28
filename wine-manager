@@ -25,11 +25,11 @@ function create_box() {
     case "$box_type" in
         1)
             echo "Configurando a caixa para jogos..."
-            WINEPREFIX="$box_path" winetricks --unattended corefonts vcrun2005 vcrun2008 vcrun2010 vcrun2012 vcrun2013 vcrun2015 vcrun2017 vcrun2019 vcrun2022 d3dcompiler_43 d3dcompiler_47 d3dx9 dotnet40 dotnet452 dotnet462 dotnet472 dotnet48 physx xact xinput_43 quartz
+            WINEPREFIX="$box_path" winetricks --unattended corefonts  vcrun2015 vcrun2022 d3dcompiler_43 d3dcompiler_47 d3dx9 dotnet40 dotnet452 dotnet462 dotnet472 dotnet48 physx xact xinput_43 quartz
             ;;
         2)
             echo "Configurando a caixa para aplicativos..."
-            WINEPREFIX="$box_path" winetricks --unattended corefonts vcrun2005 vcrun2008 vcrun2010 vcrun2012 vcrun2013 vcrun2015 vcrun2017 vcrun2019 vcrun2022
+            WINEPREFIX="$box_path" winetricks --unattended corefonts  vcrun2015 vcrun2017 vcrun2019 vcrun2022
             ;;
         3)
             echo "Criando caixa personalizada (sem configurações adicionais)."
