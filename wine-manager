@@ -3,9 +3,23 @@
 WINE_BOXES_DIR="$HOME/.wine_boxes"
 mkdir -p "$WINE_BOXES_DIR"
 
-function create_box() {
+# Função para validar nome de caixa
+validate_box_name() {
     local box_name="$1"
+    if [[ "$box_name" =~ [^a-zA-Z0-9_-] ]]; then
+        echo "Erro: Nome da caixa contém caracteres inválidos. Use apenas letras, números, '-' e '_'."
+        return 1
+    fi
+    return 0
+}
+
+# Criar nova caixa
+create_box() {
+    local box_name="$1"
+    local box_type="$2"
     local box_path="$WINE_BOXES_DIR/$box_name"
+
+    validate_box_name "$box_name" || return 1
 
     if [ -d "$box_path" ]; then
         echo "A caixa '$box_name' já existe. Escolha outro nome."
@@ -16,32 +30,34 @@ function create_box() {
     mkdir -p "$box_path"
     WINEPREFIX="$box_path" wineboot -u
 
-    echo "Qual o tipo de caixa que você deseja criar?"
-    echo "1) Jogos (configurações otimizadas para jogos)"
-    echo "2) Aplicativos (configurações para aplicativos gerais)"
-    echo "3) Personalizado (sem configurações adicionais)"
-    read -p "Escolha uma opção (1-3): " box_type
+    # Se não for passado o tipo, perguntar interativamente
+    if [ -z "$box_type" ]; then
+        echo "Qual o tipo de caixa que você deseja criar?"
+        echo "1) Jogos"
+        echo "2) Aplicativos"
+        echo "3) Personalizado"
+        read -p "Escolha uma opção (1-3): " box_type
+    fi
 
     case "$box_type" in
-        1)
+        1|j|J)
             echo "Configurando a caixa para jogos..."
-            WINEPREFIX="$box_path" winetricks --unattended corefonts  vcrun2015 vcrun2022 d3dcompiler_43 d3dcompiler_47 d3dx9 dotnet40 dotnet452 dotnet462 dotnet472 dotnet48 physx xact xinput_43 quartz
+            WINEPREFIX="$box_path" winetricks --unattended corefonts vcrun2015 vcrun2022 d3dcompiler_43 d3dcompiler_47 d3dx9 dotnet40 dotnet452 dotnet462 dotnet472 dotnet48 physx xact xinput_43 quartz
             ;;
-        2)
+        2|a|A)
             echo "Configurando a caixa para aplicativos..."
-            WINEPREFIX="$box_path" winetricks --unattended corefonts  vcrun2015 vcrun2017 vcrun2019 vcrun2022
+            WINEPREFIX="$box_path" winetricks --unattended corefonts vcrun2015 vcrun2017 vcrun2019 vcrun2022
             ;;
-        3)
+        3|p|P|*)
             echo "Criando caixa personalizada (sem configurações adicionais)."
             ;;
-        *)
-            echo "Opção inválida. Criando caixa personalizada por padrão."
-            ;;
     esac
+
     echo "Caixa '$box_name' criada com sucesso!"
 }
 
-function remove_box() {
+# Remover caixa
+remove_box() {
     local box_name="$1"
     local box_path="$WINE_BOXES_DIR/$box_name"
 
@@ -50,9 +66,9 @@ function remove_box() {
         return 1
     fi
 
-    read -p "Tem certeza que deseja remover a caixa '$box_name'? (s/N): " confirm
+    echo "Atenção! A caixa '$box_name' será removida: $box_path"
+    read -p "Tem certeza que deseja continuar? (s/N): " confirm
     if [[ "$confirm" =~ ^[Ss]$ ]]; then
-        echo "Removendo a caixa '$box_name'..."
         rm -rf "$box_path"
         echo "Caixa '$box_name' removida com sucesso!"
     else
@@ -60,23 +76,24 @@ function remove_box() {
     fi
 }
 
-function list_boxes() {
+# Listar caixas
+list_boxes() {
     echo "Caixas Wine existentes:"
     if [ -z "$(ls -A "$WINE_BOXES_DIR")" ]; then
         echo "Nenhuma caixa Wine encontrada."
     else
         for box in "$WINE_BOXES_DIR"/*; do
-            if [ -d "$box" ]; then
-                echo "- $(basename "$box")"
-            fi
+            [ -d "$box" ] && echo -e "\e[32m- $(basename "$box")\e[0m"
         done
     fi
 }
 
-function run_exe_in_box() {
+# Rodar exe em caixa específica
+run_exe_in_box() {
     local box_name="$1"
     local exe_path="$2"
     local box_path="$WINE_BOXES_DIR/$box_name"
+    local default_exe_file="$box_path/default_exe"
 
     if [ ! -d "$box_path" ]; then
         echo "Erro: A caixa '$box_name' não existe."
@@ -84,9 +101,15 @@ function run_exe_in_box() {
         return 1
     fi
 
+    # Se não passou exe_path, usar padrão
     if [ -z "$exe_path" ]; then
-        echo "Erro: Você precisa especificar o caminho para o executável (.exe)."
-        return 1
+        if [ -f "$default_exe_file" ]; then
+            exe_path=$(<"$default_exe_file")
+            echo "Usando executável padrão: $exe_path"
+        else
+            echo "Erro: Nenhum executável foi especificado e não há padrão configurado."
+            return 1
+        fi
     fi
 
     if [ ! -f "$exe_path" ]; then
@@ -98,50 +121,79 @@ function run_exe_in_box() {
     WINEPREFIX="$box_path" wine "$exe_path"
 }
 
-function show_help() {
+# Definir executável padrão para a caixa
+set_default_exe() {
+    local box_name="$1"
+    local exe_path="$2"
+    local box_path="$WINE_BOXES_DIR/$box_name"
+    local default_exe_file="$box_path/default_exe"
+
+    if [ ! -d "$box_path" ]; then
+        echo "Erro: A caixa '$box_name' não existe."
+        list_boxes
+        return 1
+    fi
+
+    if [ -z "$exe_path" ]; then
+        echo "Erro: É necessário fornecer o caminho do executável a ser definido como padrão."
+        return 1
+    fi
+
+    if [ ! -f "$exe_path" ]; then
+        echo "Erro: O arquivo '$exe_path' não foi encontrado."
+        return 1
+    fi
+
+    echo "$exe_path" > "$default_exe_file"
+    echo "Executável padrão para '$box_name' definido como '$exe_path'."
+}
+
+# Mostrar ajuda
+show_help() {
     echo "Uso: $0 [comando]"
     echo ""
     echo "Comandos disponíveis:"
-    echo "  create <nome_da_caixa>   Cria uma nova caixa Wine."
-    echo "  remove <nome_da_caixa>   Remove uma caixa Wine existente."
-    echo "  list                     Lista todas as caixas Wine existentes."
-    echo "  run <nome_da_caixa> <caminho_do_exe> Executa um .exe usando uma caixa específica."
-    echo "  help                     Mostra esta mensagem de ajuda."
+    echo "  create <nome_da_caixa> [tipo]       Cria uma nova caixa Wine. Tipos: 1/j=Jogos, 2/a=Apps, 3/p=Personalizado"
+    echo "  remove <nome_da_caixa>              Remove uma caixa Wine existente."
+    echo "  list                                Lista todas as caixas Wine existentes."
+    echo "  run <nome_da_caixa> [caminho_do_exe]  Executa um .exe usando uma caixa específica. Usa padrão se não especificado."
+    echo "  set-default <nome_da_caixa> <exe>   Define o executável padrão da caixa."
+    echo "  version                             Mostra a versão do Wine."
+    echo "  help                                Mostra esta mensagem de ajuda."
     echo ""
     echo "Exemplos:"
-    echo "  $0 create meu_jogo"
+    echo "  $0 create meu_jogo 1"
     echo "  $0 remove meu_app"
     echo "  $0 list"
     echo "  $0 run meu_jogo ~/Downloads/SetupGame.exe"
+    echo "  $0 run meu_jogo             # usa executável padrão"
+    echo "  $0 set-default meu_jogo ~/Downloads/SetupGame.exe"
+    echo "  $0 version"
 }
 
+# Tratamento dos comandos
 case "$1" in
     create)
-        if [ -z "$2" ]; then
-            echo "Erro: Você precisa fornecer um nome para a caixa."
-            show_help
-        else
-            create_box "$2"
-        fi
+        [ -z "$2" ] && { echo "Erro: você precisa fornecer um nome para a caixa."; show_help; exit 1; }
+        create_box "$2" "$3"
         ;;
     remove)
-        if [ -z "$2" ]; then
-            echo "Erro: Você precisa fornecer o nome da caixa a ser removida."
-            show_help
-        else
-            remove_box "$2"
-        fi
+        [ -z "$2" ] && { echo "Erro: você precisa fornecer o nome da caixa a ser removida."; show_help; exit 1; }
+        remove_box "$2"
         ;;
     list)
         list_boxes
         ;;
     run)
-        if [ -z "$2" ] || [ -z "$3" ]; then
-            echo "Erro: Você precisa fornecer o nome da caixa e o caminho para o executável."
-            show_help
-        else
-            run_exe_in_box "$2" "$3"
-        fi
+        [ -z "$2" ] && { echo "Erro: você precisa fornecer o nome da caixa."; show_help; exit 1; }
+        run_exe_in_box "$2" "$3"
+        ;;
+    set-default)
+        [ -z "$2" ] || [ -z "$3" ] && { echo "Erro: você precisa fornecer o nome da caixa e o executável."; show_help; exit 1; }
+        set_default_exe "$2" "$3"
+        ;;
+    version)
+        wine --version
         ;;
     help|*)
         show_help
