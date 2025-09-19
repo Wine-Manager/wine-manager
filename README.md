@@ -1,5 +1,7 @@
 # wine-manager 
-Um simples script Bash para ajudar a gerenciar prefixos Wine e facilitar a execução de aplicativos e jogos Windows no Linux. ## Instalação Escolha o método de instalação que melhor se adapta ao seu sistema: 
+Um simples script Bash para ajudar a gerenciar prefixos Wine e facilitar a execução de aplicativos e jogos Windows no Linux. 
+## Instalação Escolha o método de instalação que melhor se adapta ao seu sistema: 
+
 ### 1\. No Arch Linux (AUR) O wine-manager está disponível no [Arch User Repository (AUR)](https://aur.archlinux.org/packages/wine-manager). 
 **a) Usando um AUR helper (recomendado, ex: yay)** Se você já tem o yay (ou outro AUR helper) instalado:
 ```bash
