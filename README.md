@@ -1,5 +1,7 @@
 # wine-manager 
 Um simples script Bash para ajudar a gerenciar prefixos Wine e facilitar a execução de aplicativos e jogos Windows no Linux. 
+## Dependências 
+Esse Script Depende do wine e winetricks
 ## Instalação 
 # Escolha o método de instalação que melhor se adapta ao seu sistema: 
 
