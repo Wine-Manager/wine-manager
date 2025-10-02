@@ -22,7 +22,15 @@ cd wine-manager
 # Compile e instale o pacote
 makepkg -si
 ```
-### 2\. Em Outros Sistemas Linux (Instalação Manual)
+### 2\. Em Debian/Ubuntu
+No seu terminal:
+```bash
+   # Baixe o .deb
+   wget -c https://github.com/pedrodev2025/wine-manager/releases/download/1.2/wine-manager_1.2.deb
+   # Instale o .deb
+   sudo apt install ./wine-manager_1.2.deb
+```
+### 3\. Em Outros Sistemas Linux (Instalação Manual)
 No seu terminal:
 ```bash
     # Baixe o script
