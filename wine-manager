@@ -147,6 +147,42 @@ set_default_exe() {
     echo "$exe_path" > "$default_exe_file"
     echo "Executável padrão para '$box_name' definido como '$exe_path'."
 }
+install_script_in_box() {
+    local script_name="$1"
+    # validar script_name simples
+    if [[ "$script_name" =~ [^a-zA-Z0-9_-] ]]; then
+        echo "Nome do script inválido."
+        return 1
+    fi
+
+    TMPDIR=$(mktemp -d) || return 1
+    # garantir subdiretório
+    mkdir -p "$TMPDIR/$script_name"
+    local script_file="$TMPDIR/$script_name/install.sh"
+    local script_url="https://raw.githubusercontent.com/pedrodev2025/wine-manager-scripts-install-apps/main/scripts/$script_name/install.sh"
+
+    echo "Baixando script de instalação de $script_url ..."
+    if ! wget -q "$script_url" -O "$script_file"; then
+        echo "Falha ao baixar script."
+        rm -rf "$TMPDIR"
+        return 1
+    fi
+
+    chmod +x "$script_file"
+
+    bash "$script_file"
+    local rc=$?
+
+    rm -rf "$TMPDIR"
+
+    if [ $rc -ne 0 ]; then
+        echo "Falha no script de instalação (código $rc)."
+        return $rc
+    fi
+
+    echo "Instalação via script concluída com sucesso!"
+    return 0
+}
 
 # Mostrar ajuda
 show_help() {
@@ -160,6 +196,7 @@ show_help() {
     echo "  set-default <nome_da_caixa> <exe>   Define o executável padrão da caixa."
     echo "  version                             Mostra a versão do Wine."
     echo "  help                                Mostra esta mensagem de ajuda."
+    echo "  install-script                      Instala a partir de um script"
     echo ""
     echo "Exemplos:"
     echo "  $0 create meu_jogo 1"
@@ -168,6 +205,7 @@ show_help() {
     echo "  $0 run meu_jogo ~/Downloads/SetupGame.exe"
     echo "  $0 run meu_jogo             # usa executável padrão"
     echo "  $0 set-default meu_jogo ~/Downloads/SetupGame.exe"
+    echo "  $0 install-script npp"
     echo "  $0 version"
 }
 
@@ -195,6 +233,10 @@ case "$1" in
     version)
         wine --version
         ;;
+    install-script)
+    [ -z "$2" ] && { echo "Erro: você precisa fornecer o nome do script."; show_help; exit 1; }
+    install_script_in_box "$2"
+    ;;
     help|*)
         show_help
         ;;
