@@ -205,7 +205,7 @@ show_help() {
     echo "  $0 run meu_jogo ~/Downloads/SetupGame.exe"
     echo "  $0 run meu_jogo             # usa executável padrão"
     echo "  $0 set-default meu_jogo ~/Downloads/SetupGame.exe"
-    echo "  $0 install-script npp"
+    echo "  $0 install-script notepad++"
     echo "  $0 version"
 }
 
