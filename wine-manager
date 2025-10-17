@@ -149,12 +149,6 @@ set_default_exe() {
 }
 install_script_in_box() {
     local script_name="$1"
-    # validar script_name simples
-    if [[ "$script_name" =~ [^a-zA-Z0-9_-] ]]; then
-        echo "Nome do script inválido."
-        return 1
-    fi
-
     TMPDIR=$(mktemp -d) || return 1
     # garantir subdiretório
     mkdir -p "$TMPDIR/$script_name"
