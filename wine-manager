@@ -153,7 +153,7 @@ install_script_in_box() {
     # garantir subdiretório
     mkdir -p "$TMPDIR/$script_name"
     local script_file="$TMPDIR/$script_name/install.sh"
-    local script_url="https://raw.githubusercontent.com/pedrodev2025/wine-manager-scripts-install-apps/main/scripts/$script_name/install.sh"
+    local script_url="https://raw.githubusercontent.com/Wine-Manager/wine-manager-scripts-install-apps/main/scripts/$script_name/install.sh"
 
     echo "Baixando script de instalação de $script_url ..."
     if ! wget -q "$script_url" -O "$script_file"; then
